@@ -66,8 +66,8 @@ async function inititialize()
         const username=req.body.username;//do some salt shit
         const password=req.body.password;//do some salt
         if(!username||!password)response.report(420,res,{detail:'illegal credentials'});
-        var result=await db.getdoc({username,password},{_id:1}).catch((err)=>response.report(500,res,err));
-        if(result&&result._id){
+        var result=await db.getdoc({username},{password:1,_id:1}).catch((err)=>response.report(500,res,err));
+        if(result&&result._id&&result.password&&keyvar.varify(password,result.password)){
             req.session.clientId=String(result._id);
         }
         else response.report(420,res,{detail:'wrong credentials'});
@@ -87,7 +87,7 @@ async function inititialize()
                     'password':{reg:/^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})/,uni:false},
                     'username':{reg:/[a-zA-Z]{2,}/,uni:true},
                     'email':{reg:/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,uni:true},
-                    'contact':{reg:/^(?:(?:\+|0{0,2})91(\s*[\ -]\s*)?|[0]?)?[789]\d{9}|(\d[ -]?){10}\d$/,unit:false},
+                    'contact':{reg:/^(?:(?:\+|0{0,2})91(\s*[\ -]\s*)?|[0]?)?[789]\d{9}|(\d[ -]?){10}\d$/,unit:true},
                     'GSTIN':{reg:/\d{2}[A-Z]{5}\d{4}[A-Z]{1}\d[Z]{1}[A-Z\d]{1}/,uni:true}
                 };
         var problemWith={}
@@ -102,13 +102,16 @@ async function inititialize()
                 return
             }
             if(!uniques[itemname].uni)return;
-            var res=await db.getdoc({[itemname]:item}).catch((err)=>response.report(500,res,err))
-            if(!res)
+            var search=await db.getdoc({[itemname]:item}).catch((err)=>response.report(500,res,err))
+            if(search)
             {
                 problemWith[itemname]="used";
             }
         }
-        Object.keys(props).forEach(async(item)=>{await vari(item,props[item],res)})
+        for(let each in props)
+        {
+            await vari(each,props[each],res)
+        }
         return problemWith
     }
     registrar.updateClient=async function(props,clientId,res)
@@ -149,9 +152,14 @@ async function inititialize()
     async function registerUser(req,res,next)
     {
         await registrar.registerClient(req.body,res).catch((err)=>response.report(450,res,err));
-        res.json(response.createRes(200,res,{suc_auth:'Registed as :'+username}));
+        res.json(response.createRes(200,res,{suc_auth:'Registed as :'+req.body.username}));
         res.end();
     }
+    app.use(function(req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        next();
+      });
     app.get('/data/islogin',islogin);
     app.get('/data/users',async function(req,res,next)
     {
