@@ -10,7 +10,7 @@ async function inititialize()
     }
     const app=express();
     const bodyParser=require('body-parser');
-    app.use('/static',express.static(path.join(__dirname,'../front')));
+    app.use('/static',express.static(path.join(__dirname,'../CodeNova')));
     app.use(bodyParser.json({extended:false}));
     app.use(session(sess));
     const mongodb=require('mongodb').MongoClient;
@@ -117,9 +117,14 @@ async function inititialize()
         var dbadd=await updatedoc({_id:clientId},props).catch((err)=>response.report(400,res,err));
         return dbadd;
     }
-    registrar.registerClient=async function(username,password,res)
+    registrar.registerClient=async function(props,res)
     {
-        var probs=await registrar.varification({username,password},res).catch((err)=>response.report(400,res,err));
+        
+        var  username=props.username||"";
+        var  password=props.password||"";
+        var email=props.email||"";
+        var contact=props.contact||"";
+        var probs=await registrar.varification({username,password,email,contact},res).catch((err)=>response.report(400,res,err));
         if(Object.keys(probs).length)response.report(404,res,probs);
         var dbadd=await db.setdoc({username,password}).catch((err)=>response.report(400,res,err));
         return dbadd
@@ -140,10 +145,8 @@ async function inititialize()
         next();
     }
     async function registerUser(req,res,next)
-    {   
-        var  username=req.body.username;
-        var  password=req.body.password;
-        await registrar.registerClient(username,password,res).catch((err)=>response.report(450,res,err));
+    {
+        await registrar.registerClient(req.body,res).catch((err)=>response.report(450,res,err));
         res.json(response.createRes(200,res,{suc_auth:'Registed as :'+username}));
         res.end();
     }
