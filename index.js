@@ -1,3 +1,4 @@
+var keyvar=require('./varification.js')
 async function inititialize()
 {
     const express=require('express');
@@ -126,7 +127,8 @@ async function inititialize()
         var contact=props.contact||"";
         var probs=await registrar.varification({username,password,email,contact},res).catch((err)=>response.report(400,res,err));
         if(Object.keys(probs).length)response.report(404,res,probs);
-        var dbadd=await db.setdoc({username,password}).catch((err)=>response.report(400,res,err));
+        password=keyvar.generate(password); //hashed password!
+        var dbadd=await db.setdoc({username,password,email,contact}).catch((err)=>response.report(400,res,err));
         return dbadd
     }
     async function loginReq(req,res,next)
