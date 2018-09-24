@@ -31,6 +31,7 @@ async function inititialize()
     }
     db.updatedoc=async function updatedoc(query,props)
     {
+        if(typeof query._id=='string')query._id=new bson.ObjectId(query._id);
         var result=await Userdb.updateOne(query,props)
         return result.insertedId;
     }
@@ -116,9 +117,10 @@ async function inititialize()
     }
     registrar.updateClient=async function(props,clientId,res)
     {
-        var probs=await varification(props,res).catch((err)=>response.report(400,res,err));
+        if('username' in props||'email' in props||'password' in props)(response.createRes(420,res,{err_auth:'admin auth required'}));
+        var probs=await registrar.varification(props,res).catch((err)=>response.report(400,res,err));
         if(Object.keys(probs).length)response.report(400,res,probs);
-        var dbadd=await updatedoc({_id:clientId},props).catch((err)=>response.report(400,res,err));
+        var dbadd=await db.updatedoc({_id:clientId},{$set:props}).catch((err)=>response.report(400,res,err));
         return dbadd;
     }
     registrar.registerClient=async function(props,res)
@@ -146,7 +148,8 @@ async function inititialize()
     }
     async function updateUser(req,res,next)
     {
-        await registrar.updateClient(req.body,res).catch((err)=>response.report(450,res,err));
+        await registrar.updateClient(req.body,req.session.clientId,res).catch((err)=>response.report(450,res,err));
+        res.json(response.createRes(420,res,{Success:'Db updated'}));
         next();
     }
     async function registerUser(req,res,next)
@@ -161,9 +164,19 @@ async function inititialize()
         next();
       });
     app.get('/data/islogin',islogin);
-    app.get('/data/users',async function(req,res,next)
+    app.post('/data/userdata',async function(req,res,next)
     {
-        res.json(response.createRes(200,res,await db.getdoc({},{username:1})))
+        if(!req.session.clientId)response.report(420,res,{"auth_err":"login_required"});
+        if(!(req.body instanceof Array))response.report(400,res,{"err":"illegal request"});
+        var itemsr=await db.getdoc({_id:req.session.clientId},{_id:0,password:0})||[];
+        if(itemsr['password'])delete itemsr['password']
+        if(itemsr['_id'])delete itemsr['_id']
+        for(let each in itemsr)
+        {
+            if(!req.body.includes(each))
+                delete itemsr[each];
+        }
+        res.json(response.createRes(200,res,itemsr));
     })
     app.post('/data/login',login,islogin);
     app.get('/data/logout',logout,islogin);
