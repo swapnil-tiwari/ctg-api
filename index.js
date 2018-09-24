@@ -4,7 +4,8 @@ async function inititialize()
     const express=require('express');
     const path=require('path')
     const bson=require('bson')
-    const session=require('express-session')
+    const session=require('express-session');
+    var getallroutes=['logout','login','register','register/update','userdata','islogin']
     var sess = {
         secret: 'macmac',
         cookie: {}
@@ -150,7 +151,7 @@ async function inititialize()
     async function updateUser(req,res,next)
     {
         await registrar.updateClient(req.body,req.session.clientId,res).catch((err)=>response.report(450,res,err));
-        res.json(response.createRes(420,res,{Success:'Db updated'}));
+        res.json(response.createRes(200,res,{Success:'Db updated'}));
         next();
     }
     async function registerUser(req,res,next)
@@ -181,6 +182,7 @@ async function inititialize()
     })
     app.post('/data/login',login,islogin);
     app.get('/data/logout',logout,islogin);
+    app.get('/data/getallroutes',(req,res)=>res.json(getallroutes));
     app.post('/data/register',registerUser);
     app.post('/data/register/update',loginReq,updateUser);
     app.listen(8080,function(){console.log('listening at port:',8080)});
