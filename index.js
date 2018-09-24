@@ -117,7 +117,8 @@ async function inititialize()
     }
     registrar.updateClient=async function(props,clientId,res)
     {
-        if('username' in props||'email' in props||'password' in props)(response.createRes(420,res,{err_auth:'admin auth required'}));
+        console.log(props);
+        if('username' in props||'email' in props||'password' in props)response.report(420,res,{err_auth:'admin auth required'});
         var probs=await registrar.varification(props,res).catch((err)=>response.report(400,res,err));
         if(Object.keys(probs).length)response.report(400,res,probs);
         var dbadd=await db.updatedoc({_id:clientId},{$set:props}).catch((err)=>response.report(400,res,err));
