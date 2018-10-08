@@ -1,4 +1,5 @@
 var keyvar=require('./varification.js')
+var fs=require('fs');
 async function inititialize()
 {
     const express=require('express');
@@ -12,9 +13,31 @@ async function inititialize()
     }
     const app=express();
     const bodyParser=require('body-parser');
-    app.use('/static',express.static(path.join(__dirname,'../CodeNova')));
-    app.use(bodyParser.json({extended:false}));
+    app.use('/',express.static(path.join(__dirname,'../ctg-webview/')));
+    app.use('/',express.static(path.join(__dirname,'../ctg-webview/pages')));
     app.use(session(sess));
+    var home=null;
+    var loginhome=null;
+    app.get('/',async function(req,res)
+    {
+        if(typeof req.session.clientId!='string')
+        {
+           // if(!loginhome)
+                loginhome=fs.readFileSync('../ctg-webview/pages/login.html');
+                res.end(loginhome);
+        }
+        else 
+        {   
+            //var registrationstatus=await db.getdoc({_id:req.session.clientId},{_id:0,password:0}
+           // if()
+            
+            
+            //if(!home)
+             home=fs.readFileSync('../ctg-webview/pages/home.html');
+            res.end(home);
+        }
+    });
+    app.use(bodyParser.json({extended:false}));
     const mongodb=require('mongodb').MongoClient;
     const client=await mongodb.connect("mongodb://localhost:27017")
     const ctgdb=client.db('ctg')
@@ -185,6 +208,6 @@ async function inititialize()
     app.get('/data/getallroutes',(req,res)=>res.json(getallroutes));
     app.post('/data/register',registerUser);
     app.post('/data/register/update',loginReq,updateUser);
-    app.listen(8080,function(){console.log('listening at port:',8080)});
+    app.listen(80,function(){console.log('listening at port:',80)});
 }
 inititialize();
